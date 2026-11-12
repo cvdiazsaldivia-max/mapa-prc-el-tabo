@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet.photon.css">
+        <style>
+        #map {
+            width: 2002px;
+            height: 933px;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.photon.js"></script>
+        <script src="data/prceltabo_1.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-33.53180364567186,-71.72635477109152],[-33.418275840286455,-71.44691854135486]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/qgis2web/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // modify popup if contains media
+        function addClassToPopupIfMedia(content, popup) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var imgTd = tempDiv.querySelector('td img');
+            if (imgTd) {
+                var src = imgTd.getAttribute('src');
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|avif)$/i.test(src)) {
+                    popup._contentNode.classList.add('media');
+                    var img = popup._contentNode.querySelector('td img');
+                    if (img) {
+                        // If already loaded (cache), update immediately
+                        if (img.complete && img.naturalHeight > 0) {
+                            popup.update();
+                        } else {
+                            img.addEventListener('load', function() {
+                                popup.update();
+                            });
+                            img.addEventListener('error', function() {
+                                popup.update();
+                            });
+                        }
+                    }
+                } else if (/\.(mp3|wav|ogg|aac)$/i.test(src)) {
+                    var audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.src = src;
+                    imgTd.parentNode.replaceChild(audio, imgTd);
+                    popup._contentNode.classList.add('media');
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else if (/\.(mp4|webm|ogg|mov)$/i.test(src)) {
+                    var video = document.createElement('video');
+                    video.controls = true;
+                    video.src = src;
+                    video.style.width = "400px";
+                    video.style.height = "300px";
+                    video.style.maxHeight = "60vh";
+                    video.style.maxWidth = "60vw";
+                    imgTd.parentNode.replaceChild(video, imgTd);
+                    popup._contentNode.classList.add('media');
+                    // Aggiorna il popup quando il video carica i metadati
+                    video.addEventListener('loadedmetadata', function() {
+                        popup.update();
+                    });
+                    setTimeout(function() {
+                        popup.setContent(tempDiv.innerHTML);
+                        popup.update();
+                    }, 10);
+                } else {
+                    popup._contentNode.classList.remove('media');
+                }
+            } else {
+                popup._contentNode.classList.remove('media');
+            }
+        }
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleSatellite_0');
+        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
+        var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.google.at/permissions/geoguidelines/attr-guide.html">Map data ©2015 Google</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 20
+        });
+        layer_GoogleSatellite_0;
+        map.addLayer(layer_GoogleSatellite_0);
+        function pop_prceltabo_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Zona</th>\
+                        <td>' + (feature.properties['Zona'] !== null ? autolinker.link(String(feature.properties['Zona']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">DENSIDAD</th>\
+                        <td>' + (feature.properties['DENSIDAD'] !== null ? autolinker.link(String(feature.properties['DENSIDAD']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">SUP_SUP_PR</th>\
+                        <td>' + (feature.properties['SUP_SUP_PR'] !== null ? autolinker.link(String(feature.properties['SUP_SUP_PR']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">COF_CONST</th>\
+                        <td>' + (feature.properties['COF_CONST'] !== null ? autolinker.link(String(feature.properties['COF_CONST']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">ALT_MAX_MT</th>\
+                        <td>' + (feature.properties['ALT_MAX_MT'] !== null ? autolinker.link(String(feature.properties['ALT_MAX_MT']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_prceltabo_1_0(feature) {
+            switch(String(feature.properties['Zona'])) {
+                case 'AVP':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(128,255,120,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'BNUP':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(103,228,96,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'FLAT':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(84,140,236,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'SN1':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(73,254,220,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'SN2':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(244,255,248,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'SN3':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(217,255,243,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZAV':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,132,0,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZBC':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(127,148,65,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZCH 1':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(127,218,246,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZCH2':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(187,173,232,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZIE':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,178,178,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZIS':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,255,133,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZM1':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,0,244,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZM2a':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(176,99,185,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZM2b':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(151,0,170,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZM3':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(231,194,235,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZM4':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(252,148,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZM5':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,217,244,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZM6':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,94,128,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZM7':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,162,126,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZM8':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,178,190,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZR1':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,192,123,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZR2':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(249,222,122,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZR3':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(253,244,218,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZR4':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(217,252,120,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZR5':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(239,255,120,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZR6':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(250,255,221,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZR7':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(220,255,121,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZR8':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(199,176,99,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZTA':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(136,155,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZTB':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(128,211,244,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZTC':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(118,195,179,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZTD':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(192,127,232,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZTE':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(187,173,232,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZTF':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(143,164,255,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'ZTG':
+                    return {
+                pane: 'pane_prceltabo_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(116,194,164,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_prceltabo_1');
+        map.getPane('pane_prceltabo_1').style.zIndex = 401;
+        map.getPane('pane_prceltabo_1').style['mix-blend-mode'] = 'normal';
+        var layer_prceltabo_1 = new L.geoJson(json_prceltabo_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_prceltabo_1',
+            layerName: 'layer_prceltabo_1',
+            pane: 'pane_prceltabo_1',
+            onEachFeature: pop_prceltabo_1,
+            style: style_prceltabo_1_0,
+        });
+        bounds_group.addLayer(layer_prceltabo_1);
+        map.addLayer(layer_prceltabo_1);
+        var overlaysTree = [
+            {label: 'prc el tabo<br /><table><tr><td style="text-align: center;"><img src="legend/prceltabo_1_AVP0.png" /></td><td>AVP</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_BNUP1.png" /></td><td>BNUP</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_FLAT2.png" /></td><td>FLAT</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_SN13.png" /></td><td>SN1</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_SN24.png" /></td><td>SN2</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_SN35.png" /></td><td>SN3</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZAV6.png" /></td><td>ZAV</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZBC7.png" /></td><td>ZBC</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZCH18.png" /></td><td>ZCH 1</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZCH29.png" /></td><td>ZCH2</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZIE10.png" /></td><td>ZIE</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZIS11.png" /></td><td>ZIS</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZM112.png" /></td><td>ZM1</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZM2a13.png" /></td><td>ZM2a</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZM2b14.png" /></td><td>ZM2b</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZM315.png" /></td><td>ZM3</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZM416.png" /></td><td>ZM4</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZM517.png" /></td><td>ZM5</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZM618.png" /></td><td>ZM6</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZM719.png" /></td><td>ZM7</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZM820.png" /></td><td>ZM8</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZR121.png" /></td><td>ZR1</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZR222.png" /></td><td>ZR2</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZR323.png" /></td><td>ZR3</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZR424.png" /></td><td>ZR4</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZR525.png" /></td><td>ZR5</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZR626.png" /></td><td>ZR6</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZR727.png" /></td><td>ZR7</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZR828.png" /></td><td>ZR8</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZTA29.png" /></td><td>ZTA</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZTB30.png" /></td><td>ZTB</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZTC31.png" /></td><td>ZTC</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZTD32.png" /></td><td>ZTD</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZTE33.png" /></td><td>ZTE</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZTF34.png" /></td><td>ZTF</td></tr><tr><td style="text-align: center;"><img src="legend/prceltabo_1_ZTG35.png" /></td><td>ZTG</td></tr></table>', layer: layer_prceltabo_1},
+            {label: "Google Satellite", layer: layer_GoogleSatellite_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+		document.addEventListener("DOMContentLoaded", function() {
+            // set new Layers List height which considers toggle icon
+            function newLayersListHeight() {
+                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
+                if (layerScrollbarElement) {
+                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
+                    var originalHeight = layersListElement.style.height 
+                        || window.getComputedStyle(layersListElement).height;
+                    var newHeight = parseFloat(originalHeight) - 50;
+                    layersListElement.style.height = newHeight + 'px';
+                }
+            }
+            var isLayersListExpanded = true;
+            var controlLayersElement = document.querySelector('.leaflet-control-layers');
+            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
+            // toggle Collapsed/Expanded and apply new Layers List height
+            toggleLayerControl.addEventListener('click', function() {
+                if (isLayersListExpanded) {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                } else {
+                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+                }
+                isLayersListExpanded = !isLayersListExpanded;
+                newLayersListHeight()
+            });	
+			// apply new Layers List height if toggle layerstree
+			if (controlLayersElement) {
+				controlLayersElement.addEventListener('click', function(event) {
+					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
+					if (toggleLayerHeaderPointer) {
+						newLayersListHeight();
+					}
+				});
+			}
+            // Collapsed/Expanded at Start to apply new height
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            // Collapsed touch/small screen
+            var isSmallScreen = window.innerWidth < 650;
+            if (isSmallScreen) {
+                setTimeout(function() {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                    isLayersListExpanded = !isLayersListExpanded;
+                }, 500);
+            }  
+        });       
+        setBounds();
+        var i = 0;
+        layer_prceltabo_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Zona'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Open Sans\', sans-serif;">' + layer.feature.properties['Zona']).replace(/\\n/g, '<br>') + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_prceltabo_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        resetLabels([layer_prceltabo_1]);
+        map.on("zoomend", function(){
+            resetLabels([layer_prceltabo_1]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_prceltabo_1]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_prceltabo_1]);
+        });
+        </script>
+    </body>
+</html>
